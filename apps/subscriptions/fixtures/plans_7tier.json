@@ -1,0 +1,53 @@
+[
+  {
+    "model": "subscriptions.plan",
+    "pk": 1,
+    "fields": {
+      "tier": "free",
+      "name": "Free",
+      "monthly_price": "0.00",
+      "annual_price": "0.00",
+      "allows_ai_tools": false,
+      "removes_ads": false,
+      "allows_api_access": false,
+      "allows_chrome_extension": false,
+      "ai_requests_per_day": 0,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": 2,
+    "fields": {
+      "tier": "ai_tools",
+      "name": "AI Tools",
+      "monthly_price": "9.99",
+      "annual_price": "7.99",
+      "allows_ai_tools": true,
+      "removes_ads": true,
+      "allows_api_access": false,
+      "allows_chrome_extension": false,
+      "ai_requests_per_day": 50,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": 3,
+    "fields": {
+      "tier": "ai_tools_plus",
+      "name": "AI Tools Plus",
+      "monthly_price": "14.99",
+      "annual_price": "11.99",
+      "allows_ai_tools": true,
+      "removes_ads": true,
+      "allows_api_access": false,
+      "allows_chrome_extension": true,
+      "ai_requests_per_day": 100,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  }
+]

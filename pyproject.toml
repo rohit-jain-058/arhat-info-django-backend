@@ -1,0 +1,20 @@
+[tool.black]
+line-length    = 120
+target-version = ['py312']
+exclude        = '''
+/(
+    migrations
+  | __pycache__
+  | .venv
+  | staticfiles
+)/
+'''
+
+[tool.isort]
+profile                   = "black"
+line_length               = 120
+known_django              = "django"
+known_rest_framework      = "rest_framework"
+known_first_party         = "apps,config"
+sections                  = ["FUTURE","STDLIB","DJANGO","REST_FRAMEWORK","THIRDPARTY","FIRST_PARTY","LOCALFOLDER"]
+skip                      = ["migrations", ".venv"]

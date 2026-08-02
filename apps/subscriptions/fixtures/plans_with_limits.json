@@ -1,0 +1,79 @@
+[
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000001",
+    "fields": {
+      "name": "Free", "tier": "free", "interval": "monthly",
+      "price_cents": 0, "currency": "USD", "is_active": true,
+      "removes_ads": false, "allows_ai_tools": false, "allows_api_key": false,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": ""
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000002",
+    "fields": {
+      "name": "No Ads — Monthly", "tier": "no_ads", "interval": "monthly",
+      "price_cents": 299, "currency": "USD", "is_active": true,
+      "removes_ads": true, "allows_ai_tools": false, "allows_api_key": false,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": ""
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000003",
+    "fields": {
+      "name": "No Ads — Yearly", "tier": "no_ads", "interval": "yearly",
+      "price_cents": 2490, "currency": "USD", "is_active": true,
+      "removes_ads": true, "allows_ai_tools": false, "allows_api_key": false,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": ""
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000004",
+    "fields": {
+      "name": "AI Tools — Monthly", "tier": "ai_tools", "interval": "monthly",
+      "price_cents": 999, "currency": "USD", "is_active": true,
+      "removes_ads": true, "allows_ai_tools": true, "allows_api_key": false,
+      "ai_requests_per_day": 50,
+      "stripe_price_id": ""
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000005",
+    "fields": {
+      "name": "AI Tools — Yearly", "tier": "ai_tools", "interval": "yearly",
+      "price_cents": 8990, "currency": "USD", "is_active": true,
+      "removes_ads": true, "allows_ai_tools": true, "allows_api_key": false,
+      "ai_requests_per_day": 50,
+      "stripe_price_id": ""
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000006",
+    "fields": {
+      "name": "Full Bundle — Monthly", "tier": "full", "interval": "monthly",
+      "price_cents": 1999, "currency": "USD", "is_active": true,
+      "removes_ads": true, "allows_ai_tools": true, "allows_api_key": true,
+      "ai_requests_per_day": 200,
+      "stripe_price_id": ""
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000007",
+    "fields": {
+      "name": "Full Bundle — Yearly", "tier": "full", "interval": "yearly",
+      "price_cents": 17990, "currency": "USD", "is_active": true,
+      "removes_ads": true, "allows_ai_tools": true, "allows_api_key": true,
+      "ai_requests_per_day": 200,
+      "stripe_price_id": ""
+    }
+  }
+]

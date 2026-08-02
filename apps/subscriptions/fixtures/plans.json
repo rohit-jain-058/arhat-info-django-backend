@@ -1,0 +1,162 @@
+[
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000010",
+    "fields": {
+      "name": "No Ads — Monthly",
+      "tier": "no_ads",
+      "interval": "monthly",
+      "price_cents": 299,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": true,
+      "allows_ai_tools": false,
+      "allows_api_key": false,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": "",
+      "paypal_plan_id": "",
+      "created_at": "2024-06-01T00:00:00Z",
+      "updated_at": "2024-06-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000009",
+    "fields": {
+      "name": "No Ads — Yearly",
+      "tier": "no_ads",
+      "interval": "yearly",
+      "price_cents": 2490,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": true,
+      "allows_ai_tools": false,
+      "allows_api_key": false,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": "",
+      "paypal_plan_id": "",
+      "created_at": "2024-06-01T00:00:00Z",
+      "updated_at": "2024-06-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000011",
+    "fields": {
+      "name": "AI Tools — Monthly",
+      "tier": "ai_tools",
+      "interval": "monthly",
+      "price_cents": 499,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": true,
+      "allows_ai_tools": true,
+      "allows_api_key": false,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": "",
+      "paypal_plan_id": "",
+      "created_at": "2024-06-01T00:00:00Z",
+      "updated_at": "2024-06-01T00:00:00Z"
+    }
+  },
+    {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000017",
+    "fields": {
+      "name": "AI Tools, No Ads — Monthly",
+      "tier": "ai_tools_no_ads",
+      "interval": "monthly",
+      "price_cents": 899,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": true,
+      "allows_ai_tools": true,
+      "allows_api_key": false,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": "",
+      "paypal_plan_id": "",
+      "created_at": "2024-06-01T00:00:00Z",
+      "updated_at": "2024-06-01T00:00:00Z"
+    }
+  },
+    {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000019",
+    "fields": {
+      "name": "AI Tools, No Ads — Yearly",
+      "tier": "ai_tools_no_ads",
+      "interval": "yearly",
+      "price_cents": 7499,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": true,
+      "allows_ai_tools": true,
+      "allows_api_key": false,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": "",
+      "paypal_plan_id": "",
+      "created_at": "2024-06-01T00:00:00Z",
+      "updated_at": "2024-06-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000005",
+    "fields": {
+      "name": "AI Tools — Yearly",
+      "tier": "ai_tools",
+      "interval": "yearly",
+      "price_cents": 4099,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": true,
+      "allows_ai_tools": true,
+      "allows_api_key": false,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": "",
+      "paypal_plan_id": "",
+      "created_at": "2024-06-01T00:00:00Z",
+      "updated_at": "2024-06-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000012",
+    "fields": {
+      "name": "Full Bundle — Monthly",
+      "tier": "full",
+      "interval": "monthly",
+      "price_cents": 1999,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": true,
+      "allows_ai_tools": true,
+      "allows_api_key": true,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": "",
+      "paypal_plan_id": "",
+      "created_at": "2024-06-01T00:00:00Z",
+      "updated_at": "2024-06-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000013",
+    "fields": {
+      "name": "Full Bundle — Yearly",
+      "tier": "full",
+      "interval": "yearly",
+      "price_cents": 17990,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": true,
+      "allows_ai_tools": true,
+      "allows_api_key": true,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": "",
+      "paypal_plan_id": "",
+      "created_at": "2024-06-01T00:00:00Z",
+      "updated_at": "2024-06-01T00:00:00Z"
+    }
+  }
+]
