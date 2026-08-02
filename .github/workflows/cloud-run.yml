@@ -2,12 +2,12 @@ name: Deploy Django to Cloud Run
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, develop]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
 
     steps:
       - name: Checkout
@@ -20,67 +20,79 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+      
+      - name: Set environment by branch
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "BUILD_ENV=production"                          >> $GITHUB_ENV
+            echo "DJANGO_SETTINGS_MODULE=config.settings.production"  >> $GITHUB_ENV
+          else
+            echo "BUILD_ENV=development"                         >> $GITHUB_ENV
+            echo "DJANGO_SETTINGS_MODULE=config.settings.development" >> $GITHUB_ENV
+          fi
 
       - name: Generate .env.yaml
         run: |
           cat > .env.yaml << EOF
-          DJANGO_SETTINGS_MODULE: "config.settings.development"
+          # Django
+          DJANGO_SETTINGS_MODULE: "${{ env.DJANGO_SETTINGS_MODULE }}"
           SECRET_KEY: "${{ secrets.DJANGO_SECRET_KEY }}"
-          DEBUG: "True"
+          BUILD_ENV: "${{ env.BUILD_ENV }}"
+          DEBUG: ${{ vars.DEBUG }}
           ALLOWED_HOSTS: "${{ vars.ALLOWED_HOSTS }}"
-          FRONTEND_URL: "${{ vars.FRONTEND_URL }}"
-          OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
-          ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
-          JWT_ACCESS_TOKEN_LIFETIME_MINUTES: "60"
-          JWT_REFRESH_TOKEN_LIFETIME_DAYS: "7"
-          USE_S3: "False"
-          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-          AWS_STORAGE_BUCKET_NAME: "${{ vars.AWS_STORAGE_BUCKET_NAME }}"
-          AWS_S3_REGION_NAME: "us-east-1"
-          SENTRY_DSN: "${{ secrets.SENTRY_DSN }}"
-          SENTRY_ENVIRONMENT: "development"
-          EMAIL_HOST: "smtp.office365.com"
-          EMAIL_PORT: "587"
-          EMAIL_USE_TLS: "True"
+
+          # Common — hardcoded (non-sensitive)
+          EMAIL_HOST: ${{ vars.EMAIL_HOST }}
+          EMAIL_PORT: ${{ vars.EMAIL_PORT }}
+          EMAIL_USE_TLS: ${{ vars.EMAIL_USE_TLS }}
           EMAIL_HOST_USER: "${{ vars.EMAIL_HOST_USER }}"
-          EMAIL_HOST_PASSWORD: "${{ secrets.EMAIL_HOST_PASSWORD }}"
-          DEFAULT_FROM_EMAIL: "${{ vars.EMAIL_HOST_USER }}"
-          TEAM_EMAIL: "${{ vars.EMAIL_HOST_USER }}"
-          TENANT_ID: "${{ secrets.TENANT_ID }}"
-          CLIENT_ID: "${{ secrets.CLIENT_ID }}"
-          CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
-          DB_HOST: "${{ secrets.DB_HOST }}"
-          DB_NAME: "${{ secrets.DB_NAME }}"
+          DEFAULT_FROM_EMAIL: "${{ vars.DEFAULT_FROM_EMAIL }}"
+          TEAM_EMAIL: "${{ vars.TEAM_EMAIL }}"
+
+          # Environment Variables
+          DB_HOST: "${{ vars.DB_HOST }}"
+          DB_NAME: "${{ vars.DB_NAME }}"
+          FRONTEND_URL: "${{ vars.FRONTEND_URL }}"
+          JWT_ACCESS_TOKEN_LIFETIME_MINUTES: "${{ vars.JWT_ACCESS_TOKEN_LIFETIME_MINUTES }}"
+          JWT_REFRESH_TOKEN_LIFETIME_DAYS: "${{ vars.JWT_REFRESH_TOKEN_LIFETIME_DAYS }}"
+          TENANT_ID: "${{ vars.TENANT_ID }}"
+          CLIENT_ID: "${{ vars.CLIENT_ID }}"
+
+          # Environment Secrets
           DB_USER: "${{ secrets.DB_USER }}"
-          DB_PASSWORD: "${{ secrets.DB_PASSWORD }}"
+          CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
+          ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
+          OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
           STRIPE_SECRET_KEY: "${{ secrets.STRIPE_SECRET_KEY }}"
           STRIPE_PUBLISHABLE_KEY: "${{ secrets.STRIPE_PUBLISHABLE_KEY }}"
           STRIPE_WEBHOOK_SECRET: "${{ secrets.STRIPE_WEBHOOK_SECRET }}"
+          EMAIL_HOST_PASSWORD: "${{ secrets.EMAIL_HOST_PASSWORD }}"
+
+          # Encrypted Secrets
+          DB_PASSWORD: "${{ secrets.DB_PASSWORD }}"
           EOF
 
       - name: Build and push image
         run: |
           gcloud builds submit \
-            --tag gcr.io/${{ vars.GCP_PROJECT_ID }}/chatbot-arhatinfo \
+            --tag gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend:${{ env.BUILD_ENV }} \
             .
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy chatbot-arhatinfo \
-            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/chatbot-arhatinfo \
+            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend:${{ env.BUILD_ENV }} \
             --region ${{ vars.GCP_REGION }} \
             --allow-unauthenticated \
             --env-vars-file .env.yaml \
-            --add-cloudsql-instances ${{ vars.GCP_PROJECT_ID }}:${{ vars.GCP_REGION }}:${{ vars.CLOUD_SQL_INSTANCE }}
+            --set-env-vars DJANGO_SETTINGS_MODULE=${{ env.DJANGO_SETTINGS_MODULE }}
 
       - name: Run migrations
         run: |
           gcloud run jobs create migrate-${{ github.run_number }} \
-            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/chatbot-arhatinfo \
+            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend:${{ env.BUILD_ENV }} \
             --region ${{ vars.GCP_REGION }} \
             --env-vars-file .env.yaml \
-            --add-cloudsql-instances ${{ vars.GCP_PROJECT_ID }}:${{ vars.GCP_REGION }}:${{ vars.CLOUD_SQL_INSTANCE }} \
             --command "python" \
             --args "manage.py,migrate" \
             --execute-now \
