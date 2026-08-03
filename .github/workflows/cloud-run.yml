@@ -38,13 +38,13 @@ jobs:
           DJANGO_SETTINGS_MODULE: "${{ env.DJANGO_SETTINGS_MODULE }}"
           SECRET_KEY: "${{ secrets.DJANGO_SECRET_KEY }}"
           BUILD_ENV: "${{ env.BUILD_ENV }}"
-          DEBUG: ${{ vars.DEBUG }}
+          DEBUG: "${{ vars.DEBUG }}"
           ALLOWED_HOSTS: "${{ vars.ALLOWED_HOSTS }}"
 
           # Common — hardcoded (non-sensitive)
-          EMAIL_HOST: ${{ vars.EMAIL_HOST }}
-          EMAIL_PORT: ${{ vars.EMAIL_PORT }}
-          EMAIL_USE_TLS: ${{ vars.EMAIL_USE_TLS }}
+          EMAIL_HOST: "${{ vars.EMAIL_HOST }}"
+          EMAIL_PORT: "${{ vars.EMAIL_PORT }}"
+          EMAIL_USE_TLS: "${{ vars.EMAIL_USE_TLS }}"
           EMAIL_HOST_USER: "${{ vars.EMAIL_HOST_USER }}"
           DEFAULT_FROM_EMAIL: "${{ vars.DEFAULT_FROM_EMAIL }}"
           TEAM_EMAIL: "${{ vars.TEAM_EMAIL }}"
