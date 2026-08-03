@@ -75,13 +75,13 @@ jobs:
       - name: Build and push image
         run: |
           gcloud builds submit \
-            --tag gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend:${{ env.BUILD_ENV }} \
+            --tag gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend-${{ env.BUILD_ENV }} \
             .
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy chatbot-arhatinfo \
-            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend:${{ env.BUILD_ENV }} \
+            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend-${{ env.BUILD_ENV }} \
             --region ${{ vars.GCP_REGION }} \
             --allow-unauthenticated \
             --env-vars-file .env.yaml \
@@ -90,7 +90,7 @@ jobs:
       - name: Run migrations
         run: |
           gcloud run jobs create migrate-${{ github.run_number }} \
-            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend:${{ env.BUILD_ENV }} \
+            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend-${{ env.BUILD_ENV }} \
             --region ${{ vars.GCP_REGION }} \
             --env-vars-file .env.yaml \
             --command "python" \
