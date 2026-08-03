@@ -10,14 +10,8 @@ IS_LAMBDA = bool(os.environ.get('AWS_LAMBDA_FUNCTION_NAME'))
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '.execute-api.us-east-1.amazonaws.com',   # API Gateway URL
     'api.arhatinfo.com',                        # your custom domain
-    '*.arhat.info',
-    '*.run.app',
-    'dev.arhat.info',
-    'lrk6jg5p7z25wg3cq5d47cfhe40xyraw.lambda-url.us-east-1.on.aws',
-    '75hmr4ydr5.execute-api.us-east-1.amazonaws.com',
-    'chatbot-arhatinfo-xzkib7kizq-uk.a.run.app',
+    'prod.arhat.info',
     config('ALLOWED_HOSTS', default=''),
 ]
 
@@ -39,13 +33,10 @@ DATABASES = {
 CORS_ALLOWED_ORIGINS = [
     'https://arhat.info',
     'https://www.arhat.info',
-    'https://arhatinfo.web.app',
-    'https://arhatinfo.firebaseapp.com',
-    'http://localhost:3000',
     'https://*.arhat.info',
-    'https://*.run.app',
     'https://arhatinfo.com',
-    'https://dev-hosting.arhat.info'
+    'https://www.arhatinfo.com'
+
 ]
 CORS_ALLOW_CREDENTIALS = True
 
