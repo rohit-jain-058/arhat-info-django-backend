@@ -81,13 +81,11 @@ jobs:
 
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy chatbot-arhatinfo \
+          gcloud run deploy django-backend-${{ env.BUILD_ENV }} \
             --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend-${{ env.BUILD_ENV }} \
             --region ${{ vars.GCP_REGION }} \
             --allow-unauthenticated \
-            --env-vars-file .env.yaml \
-            --set-env-vars DJANGO_SETTINGS_MODULE=${{ env.DJANGO_SETTINGS_MODULE }}
-
+            --env-vars-file .env.yaml 
       - name: Run migrations
         run: |
           gcloud run jobs create migrate-${{ github.run_number }} \
