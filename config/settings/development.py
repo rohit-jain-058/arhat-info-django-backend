@@ -38,14 +38,8 @@ DATABASES = {
 
 # CORS — allow your Firebase frontend
 CORS_ALLOWED_ORIGINS = [
-    'https://arhat.info',
-    'https://www.arhat.info',
-    'https://arhatinfo.web.app',
-    'https://arhatinfo.firebaseapp.com',
-    'http://localhost:3000',
-    'https://*.arhat.info',
-    'https://*.run.app',
-    'https://arhatinfo.com'
+    'https://dev-hosting.arhat.info',
+    'https://localhost:3000',
 ]
 CORS_ALLOW_CREDENTIALS = True
 

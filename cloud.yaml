@@ -1,0 +1,24 @@
+# cloudbuild.yaml
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - --build-arg
+      - BUILD_ENV=${_BUILD_ENV}
+      - --build-arg
+      - DJANGO_SETTINGS_MODULE=${_DJANGO_SETTINGS_MODULE}
+      - --tag
+      - gcr.io/arhat-info-tools/django-backend-develop
+      - .
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - gcr.io/arhat-info-tools/django-backend-develop
+
+images:
+  - gcr.io/arhat-info-tools/django-backend-develop
+
+substitutions:
+  _BUILD_ENV: development
+  _DJANGO_SETTINGS_MODULE: config.settings.development
