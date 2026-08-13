@@ -1,657 +1,178 @@
-# Django Production Starter Kit
+# Tylented — Backend
 
-> Python 3.12 · Django 5.x · PostgreSQL · Redis · Celery · JWT · Docker · GitHub Actions
-> 
-> Built by [arhatinfo.com](https://arhatinfo.com) — Backend, AI Automation & Cloud Engineering
+> AI career toolkit — resume parsing, AI-assisted job search tools, and a Chrome extension, built end-to-end by me.
 
----
-
-## Quick Reference
-
-| URL | Description |
-|-----|-------------|
-| `http://localhost:8000` | Django app |
-| `http://localhost:8000/admin/` | Admin panel |
-| `http://localhost:8000/api/docs/` | Swagger UI |
-| `http://localhost:8000/api/redoc/` | ReDoc |
-| `http://localhost:8000/api/v1/core/health/` | Health check |
-| `http://localhost:5555` | Flower (Celery dashboard) |
+[Live Demo](https://your-live-url-here) · [Website](https://your-website-here) · [Architecture](#architecture)
 
 ---
 
-## Table of Contents
+## Why I Built This
 
-1. [Project Structure](#1-project-structure)
-2. [The .env File](#2-the-env-file)
-3. [Running Locally (no Docker)](#3-running-locally-no-docker)
-4. [Running with Docker](#4-running-with-docker)
-5. [API Endpoints](#5-api-endpoints)
-6. [GitHub Actions CI/CD](#6-github-actions-cicd)
-7. [Production Deployment](#7-production-deployment)
-8. [Common Errors & Fixes](#8-common-errors--fixes)
-9. [Extending the Starter Kit](#9-extending-the-starter-kit)
+Job searching is repetitive: tailoring a resume, writing a cover letter, answering a recruiter, matching a JD against your background. I built Tylented to automate that work — a Django REST API backend, a React frontend, and a Chrome extension that plugs AI tools directly into the browser while someone is applying. This repo is the backend: the API, billing, auth, and AI integration layer that the frontend and extension both call.
+
+It's a real product with paying users on Stripe, not a tutorial project — which shaped a lot of the decisions below (rate limiting AI usage per plan, webhook signature verification, environment-isolated infrastructure).
 
 ---
 
-## 1. Project Structure
+## Architecture
 
 ```
-django-production-starter/
-├── apps/
-│   ├── authentication/       # Custom User model, JWT auth, tests
-│   └── core/                 # Base models, pagination, exceptions, health check
-├── config/
-│   ├── settings/
-│   │   ├── base.py           # Shared settings (all environments)
-│   │   ├── local.py          # Local development overrides
-│   │   ├── staging.py        # Staging overrides
-│   │   └── production.py     # Production (hardened security + Sentry)
-│   ├── celery.py             # Celery app config
-│   └── urls.py               # Root URL routing
-├── docker/
-│   └── Dockerfile            # Multi-stage build (local + production)
-├── requirements/
-│   ├── base.txt              # Installed in ALL environments
-│   ├── local.txt             # Dev tools + flower + pytest
-│   └── production.txt        # Gunicorn + health check
-├── scripts/
-│   └── wait_for_db.py        # Pure Python DB wait (no netcat needed)
-├── .env.example              # Copy this to .env and fill in values
-├── .github/workflows/ci.yml  # CI/CD pipeline
-├── docker-compose.yml        # Local Docker setup
-├── docker-compose.prod.yml   # Production overrides
-├── manage.py
-└── Makefile                  # Shortcut commands
+                    ┌───────────────┐        ┌──────────────────────┐
+                    │   React SPA   │        │  Chrome Extension     │
+                    │               │        │  (Manifest V3)        │
+                    └───────┬───────┘        └───────────┬───────────┘
+                            │                             │
+                            │        JWT Bearer auth      │
+                            └──────────────┬──────────────┘
+                                           ▼
+                          ┌─────────────────────────────────┐
+                          │        Django REST API           │
+                          │   (Gunicorn on Cloud Run)         │
+                          │                                   │
+                          │  • JWT auth (rotation + blacklist)│
+                          │  • Feature-flag permission layer  │
+                          │  • drf-spectacular (OpenAPI docs) │
+                          │  • Structured JSON logging         │
+                          │  • Sentry error tracking           │
+                          └──┬───────────┬───────────┬────────┘
+                             │           │           │
+                 ┌───────────▼──┐  ┌─────▼─────┐  ┌──▼──────────────┐
+                 │  PostgreSQL   │  │  OpenAI    │  │  Stripe          │
+                 │  (Cloud SQL,  │  │  GPT-4o /  │  │  Checkout +      │
+                 │  private IP   │  │  4o-mini   │  │  signed webhooks │
+                 │  via VPC)     │  └────────────┘  └──────────────────┘
+                 └───────┬───────┘
+                         │
+                 ┌───────▼────────────────┐
+                 │  Celery + Redis         │
+                 │  (async tasks, beat     │
+                 │   scheduler, Flower)    │
+                 └─────────────────────────┘
+
+CI/CD: GitHub Actions → Cloud Build → Cloud Run deploy
+       → Cloud Run Job (migrations, run separately from the deploy)
+       → Direct VPC egress restricts prod DB access to a private IP
+```
+
+Key decisions baked into this diagram, not just boxes:
+
+- **Migrations run as a separate Cloud Run Job, not inline with deploy.** If a migration fails, it doesn't take the running revision down with it.
+- **The database has no public entry point in production.** Cloud Run reaches Cloud SQL over Direct VPC egress restricted to private ranges only — the API is the only thing that can talk to Postgres.
+- **The AI layer sits behind the API, not in front of it.** The frontend and extension never call OpenAI directly; every AI call goes through the Django service layer so tier gating, rate limiting, and logging apply uniformly.
+
+---
+
+## Engineering
+
+- **Backend**: Django 5.0 + Django REST Framework, split into focused apps (`authentication`, `resumes`, `subscriptions`, `tools`, `chatbot`, `core`) instead of one monolithic app. A shared `TimeStampedModel`/pagination/exception-handler base in `core` keeps the others consistent.
+- **API architecture**: versioned under `/api/`, self-documenting via `drf-spectacular` (Swagger UI + ReDoc generated from the code, not hand-maintained), consistent error envelope (`{success, error: {code, message, detail}}`) returned by a single custom exception handler instead of ad-hoc error shapes per view.
+- **PostgreSQL**: Cloud SQL, environment-specific settings modules (`local` / `development` / `staging` / `production`) so local dev, staging, and prod never share config by accident. Production isolates the DB behind a private IP (see Infrastructure).
+- **LLM integration**: OpenAI GPT-4o and GPT-4o-mini, routed per-tool by a model map — cheaper `gpt-4o-mini` for straightforward generation (emails, LinkedIn posts), `gpt-4o` reserved for tasks that need real reasoning (job matching, cover letters). Resume text extraction falls back through `pdfplumber` → `pypdf` → `python-docx` so a PDF that trips up one parser still gets read instead of failing the upload outright.
+- **Authentication**: JWT via `djangorestframework-simplejwt`, rotating refresh tokens with blacklist-after-rotation (a stolen refresh token can't be replayed after the legitimate client rotates it). Authorization is **feature-flag based**, not a strict tier ladder — a plan can independently grant "removes ads," "AI tools access," or "Chrome extension access," so pricing tiers can mix capabilities without new permission classes. A separate API-key auth path exists for programmatic access.
+- **Cloud infrastructure**: Cloud Run (containerized, autoscaling, scale-to-zero), Cloud SQL Postgres reached over Direct VPC egress, environment-scoped deploys — pushes to `main` deploy to production with its own GCP secrets/variables, pushes to `develop` deploy to a separate development service.
+- **CI/CD**: GitHub Actions builds the image via Cloud Build, deploys to Cloud Run, then runs `manage.py migrate` as its own Cloud Run Job — deploy and migrate are decoupled on purpose.
+- **Observability**: Sentry for exception tracking, plus a custom logging formatter that emits Cloud Logging-native structured JSON (severity, source location, and full stack traces mapped to the fields Cloud Logging's Error Reporting expects) instead of plain-text logs that are hard to query in production.
+
+---
+
+## AI Architecture
+
+Nine+ AI-powered endpoints (cover letters, resume summaries, job-description matching, recruiter replies, LinkedIn posts, SQL/regex/cron generation, API request analysis) share one service layer (`gpt_service.py`) and one decorator (`ai_tool_endpoint`) instead of each view reimplementing auth, quota, and logging:
+
+- **Tier + quota enforcement in one place.** The decorator checks the caller's subscription tier, then their remaining daily AI quota (tracked per user/day via a rolling counter), before the request is allowed to reach OpenAI — a request that fails the quota check never gets logged as a "used" AI call or costs an API token.
+- **Every call is logged**, success or failure — token counts, model used, duration, and a preview of the output — both for per-user audit history and for the daily counters that drive rate limiting.
+- **Bad input fails cheap.** A `ValueError` from the view (missing required field, etc.) returns a 400 without touching OpenAI or the quota; only real model/API failures are logged as failed AI calls.
+
+### AI Engineering
+
+The application uses LLMs as a component of the application architecture rather than as an uncontrolled source of business logic. Every AI call is centralized behind a single service layer rather than called ad hoc from views, so tier gating, rate limiting, and logging apply uniformly. Where an AI response feeds downstream logic — resume parsing into structured skills/experience/achievements — the model is constrained to OpenAI's structured JSON output mode and the response is parsed and validated (`json.loads` with a safe empty-object fallback) before it's persisted, rather than trusted as-is.
+
+*Honest gap, not glossed over:* there's no automated eval harness yet that regression-tests prompt changes against a fixed set of representative inputs — today that verification is manual. It's the next thing I'd add before touching the resume-parsing prompt again.
+
+---
+
+## Reliability & Testing
+
+- Django `TestCase` coverage exists for the `authentication` and `core` apps; `resumes`, `subscriptions`, `tools`, and `chatbot` don't have automated test coverage yet — the honest state of it, not oversold.
+- `django-health-check` exposes `/api/core/health/`, checking DB and Redis connectivity — used for uptime checks.
+- Sentry captures unhandled exceptions in staging and production with full stack traces.
+- Stripe webhook handling verifies the signature on every incoming event (`construct_webhook_event`) before trusting the payload, and reconciles local subscription state against Stripe on read if the two ever drift (e.g. a missed webhook), rather than silently trusting a possibly-stale local row.
+
+---
+
+## Security
+
+- All secrets are loaded from environment variables via `python-decouple` — nothing is hardcoded, and `SECRET_KEY`/API keys/DB credentials have no default fallback in code, so the app refuses to start without them configured.
+- `.env` and `.env.*` are gitignored; verified via full git history (`git log --all --full-history`) that no env file has ever been committed to this repo.
+- `.env.example` ships placeholder values only — see below.
+- JWT access tokens are short-lived, refresh tokens rotate and are blacklisted after use.
+- Authorization is enforced at the DRF permission-class layer (server-side), not just hidden in the frontend.
+- Stripe webhooks are signature-verified before being processed.
+- Production settings enable `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, and a one-year `SECURE_HSTS_SECONDS` with subdomains included; `CORS_ALLOWED_ORIGINS` and `ALLOWED_HOSTS` are explicit allowlists per environment, not wildcards.
+
+**Bad (what NOT to do — a real secret value in a file that looks like a template):**
+```env
+OPENAI_API_KEY=sk-proj-a1B2c3D4e5F6...
+```
+
+**Good (what this repo actually does — `.env.example` is placeholders only):**
+```env
+OPENAI_API_KEY=<openai-api-key>
 ```
 
 ---
 
-## 2. The .env File
+## Infrastructure
 
-> **The only file you need to change.** Copy `.env.example` to `.env` before anything else.
+- **Compute**: Google Cloud Run — separate services for `production` (branch `main`) and `development` (branch `develop`), each with its own environment variables and secrets.
+- **Database**: Cloud SQL for PostgreSQL. Production reaches it over Direct VPC egress (`--vpc-egress=private-ranges-only`) so the database is not exposed on a public IP to the API layer.
+- **Async work**: Celery workers + beat scheduler backed by Redis, with Flower available for queue monitoring.
+- **Static/media**: WhiteNoise for static files by default, with optional S3 (`django-storages` + `boto3`) for production media.
+- **Containers**: multi-stage Docker build (separate build/runtime stages, non-root user, only runtime system deps in the final image) run via Gunicorn.
+
+---
+
+## Development Workflow
+
+- Environment-specific Django settings modules (`local`, `development`, `staging`, `production`) instead of one settings file branching on flags.
+- `docker-compose.yml` for local Postgres/Redis/Celery/Flower; the API can also run directly against a local or Dockerized Postgres.
+- GitHub Actions CI/CD: push to `develop` deploys to the development Cloud Run service, push to `main` deploys to production — each with its own scoped GCP service account, secrets, and (for production) VPC configuration.
+- API contract is generated from code (`drf-spectacular`) and browsable at `/api/docs/` — the schema can't drift from the implementation the way a hand-written API doc can.
+
+---
+
+## Running Locally
 
 ```bash
-cp .env.example .env
-```
-
-### Generate a SECRET_KEY
-
-```bash
-python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-```
-
-### Local (no Docker)
-
-```env
-DJANGO_SETTINGS_MODULE=config.settings.local
-SECRET_KEY=any-long-random-string-here
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Use localhost — Django runs outside Docker
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/app_db
-REDIS_URL=redis://localhost:6379/0
-CELERY_BROKER_URL=redis://localhost:6379/0
-CELERY_RESULT_BACKEND=redis://localhost:6379/0
-
-CORS_ALLOWED_ORIGINS=http://localhost:3000
-USE_S3=False
-SENTRY_DSN=
-```
-
-### Docker (local dev)
-
-```env
-DJANGO_SETTINGS_MODULE=config.settings.local
-SECRET_KEY=any-long-random-string-here
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Use db and redis — Docker service hostnames
-DATABASE_URL=postgres://postgres:postgres@db:5432/app_db
-REDIS_URL=redis://redis:6379/0
-CELERY_BROKER_URL=redis://redis:6379/0
-CELERY_RESULT_BACKEND=redis://redis:6379/0
-
-CORS_ALLOWED_ORIGINS=http://localhost:3000
-USE_S3=False
-SENTRY_DSN=
-```
-
-### Production
-
-```env
-DJANGO_SETTINGS_MODULE=config.settings.production
-SECRET_KEY=very-long-random-50-plus-chars-string
-DEBUG=False
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
-
-DATABASE_URL=postgres://postgres:STRONG_PASSWORD@db:5432/app_db
-REDIS_URL=redis://redis:6379/0
-CELERY_BROKER_URL=redis://redis:6379/0
-CELERY_RESULT_BACKEND=redis://redis:6379/0
-
-CORS_ALLOWED_ORIGINS=https://yourdomain.com
-SENTRY_DSN=https://your-key@sentry.io/project-id
-USE_S3=True
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-AWS_STORAGE_BUCKET_NAME=your-bucket
-AWS_S3_REGION_NAME=us-east-1
-```
-
-> **Key difference:** Local uses `localhost`, Docker uses `db` and `redis` as hostnames.
-
----
-
-## 3. Running Locally (no Docker)
-
-> Requires: Python 3.12, PostgreSQL, and Redis installed on your machine.
-
-### Step 1 — Create virtual environment
-
-```bash
+git clone https://github.com/rohit-jain-058/arhat-info-django-backend.git
+cd arhat-info-django-backend
 python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-```
+source .venv/bin/activate
 
-### Step 2 — Install dependencies
-
-```bash
 pip install -r requirements/local.txt
-```
 
-### Step 3 — Configure .env
-
-```bash
 cp .env.example .env
-# Set DATABASE_URL with @localhost:5432 (not @db:5432)
-# Set a SECRET_KEY
-```
+# fill in: SECRET_KEY, OPENAI_API_KEY, STRIPE_* keys, DB_* — all placeholders in .env.example
 
-### Step 4 — Create the database
-
-```bash
-# Mac (if postgres user does not exist)
-createuser -s postgres
-createdb -U postgres app_db
-
-# Linux
-sudo -u postgres psql -c "CREATE DATABASE app_db;"
-
-# If you get 'role postgres does not exist' on Mac
-psql postgres
-# Inside psql:
-CREATE ROLE postgres WITH SUPERUSER LOGIN PASSWORD 'postgres';
-CREATE DATABASE app_db OWNER postgres;
-\q
-```
-
-### Step 5 — Migrate and create superuser
-
-```bash
 python manage.py migrate
 python manage.py createsuperuser
-```
-
-### Step 6 — Start the server
-
-```bash
 python manage.py runserver
 ```
 
-Open `http://localhost:8000`
-
-### Optional — Start Celery (3 extra terminal tabs)
-
+Optional — Celery, if you're touching async tasks:
 ```bash
-# Tab 2 — Worker
 celery -A config worker --loglevel=info
-
-# Tab 3 — Beat (scheduled tasks)
 celery -A config beat --loglevel=info
-
-# Tab 4 — Flower dashboard (optional)
 celery -A config flower --port=5555
 ```
 
----
-
-## 4. Running with Docker
-
-> Requires: Docker Desktop installed and running. Nothing else needed locally.
-
-### Step 1 — Configure .env
-
-```bash
-cp .env.example .env
-# DATABASE_URL must use @db:5432 (not localhost)
-# REDIS_URL must use redis:6379 (not localhost)
-# Set your SECRET_KEY
-```
-
-### Step 2 — Build and start
-
-```bash
-docker-compose build
-docker-compose up -d
-```
-
-Migrations run automatically on startup. Wait ~10 seconds then open `http://localhost:8000`
-
-### Step 3 — Create superuser
-
-```bash
-docker-compose exec web python manage.py createsuperuser
-```
-
-### Services
-
-| Service | Description | Port |
-|---------|-------------|------|
-| `web` | Django development server | 8000 |
-| `db` | PostgreSQL 16 | 5432 |
-| `redis` | Redis 7 | 6379 |
-| `celery` | Celery worker (async tasks) | — |
-| `celery-beat` | Celery beat (scheduled tasks) | — |
-| `flower` | Celery monitoring dashboard | 5555 |
-
-### Common Docker commands
-
-```bash
-# See all running containers
-docker-compose ps
-
-# Follow logs
-docker-compose logs -f
-docker-compose logs -f web       # web only
-
-# Open Django shell
-docker-compose exec web python manage.py shell
-
-# Open bash inside container
-docker-compose exec web bash
-
-# Stop all containers
-docker-compose down
-
-# Stop and wipe database (fresh start)
-docker-compose down -v
-
-# Rebuild from scratch (after adding packages)
-docker-compose build --no-cache
-docker-compose up -d
-
-# Restart one service
-docker-compose restart web
-```
-
-### Makefile shortcuts
-
-```bash
-make build        # Build Docker images
-make up           # Start all services
-make down         # Stop all services
-make down-v       # Stop and wipe database
-make logs         # Follow all logs
-make shell        # Django shell
-make migrate      # Run migrations
-make superuser    # Create admin user
-make test         # Run tests
-make test-cov     # Tests with coverage report
-```
+API docs once running: `http://localhost:8000/api/docs/`
 
 ---
 
-## 5. API Endpoints
-
-### Authentication
-
-All protected endpoints require:
-```
-Authorization: Bearer <access_token>
-```
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/v1/auth/register/` | No | Register — returns tokens immediately |
-| POST | `/api/v1/auth/token/` | No | Login — returns access + refresh tokens |
-| POST | `/api/v1/auth/token/refresh/` | No | Refresh access token |
-| POST | `/api/v1/auth/token/verify/` | No | Verify a token |
-| POST | `/api/v1/auth/logout/` | Yes | Logout — blacklists refresh token |
-| GET/PATCH | `/api/v1/auth/me/` | Yes | Get or update profile |
-| PUT | `/api/v1/auth/me/password/` | Yes | Change password |
-| GET | `/api/v1/core/health/` | No | Health check (DB + Redis) |
-
-### Auth flow
-
-```bash
-# Register
-POST /api/v1/auth/register/
-{
-  "email": "user@example.com",
-  "first_name": "Jane",
-  "last_name": "Smith",
-  "password": "StrongPass123!",
-  "password2": "StrongPass123!"
-}
-# → { "user": {...}, "tokens": { "access": "eyJ...", "refresh": "eyJ..." } }
-
-# Login
-POST /api/v1/auth/token/
-{ "email": "user@example.com", "password": "StrongPass123!" }
-# → { "access": "eyJ...", "refresh": "eyJ..." }
-
-# Use access token (valid 60 min by default)
-GET /api/v1/auth/me/
-Authorization: Bearer eyJ...
-
-# Refresh when expired
-POST /api/v1/auth/token/refresh/
-{ "refresh": "eyJ..." }
-# → { "access": "eyJ...", "refresh": "eyJ..." }
-
-# Logout
-POST /api/v1/auth/logout/
-{ "refresh": "eyJ..." }
-# → 205 Reset Content
-```
-
-### Error response format
-
-All errors return a consistent envelope:
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "not_found",
-    "message": "Not found.",
-    "detail": { ... }
-  }
-}
-```
-
----
-
-## 6. GitHub Actions CI/CD
-
-### What the pipeline does
-
-1. Spins up PostgreSQL + Redis as test services
-2. Installs `requirements/local.txt`
-3. Runs `python manage.py migrate`
-4. Runs `pytest --cov=apps` with coverage
-5. On `main` branch: builds Docker image
-
-### Step 1 — Push to GitHub
-
-```bash
-git init
-git add .
-git commit -m "initial commit"
-
-# Create repo on github.com, then:
-git remote add origin https://github.com/yourusername/your-repo.git
-git push -u origin main
-```
-
-Go to your repo → **Actions** tab → watch it run live.
-
-### Step 2 — Add deployment secrets
-
-GitHub repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
-
-| Secret | Value |
-|--------|-------|
-| `PROD_HOST` | Your server IP address |
-| `PROD_USER` | SSH username (usually `ubuntu`) |
-| `PROD_SSH_KEY` | Your private SSH key (`cat ~/.ssh/id_rsa`) |
-
-### Run CI locally without pushing
-
-```bash
-# Install act
-brew install act          # Mac
-choco install act-cli     # Windows
-
-# Run full CI
-act
-
-# Run test job only
-act -j test
-```
-
-### Run tests directly (fastest)
-
-```bash
-# Outside Docker
-pytest -v
-pytest --cov=apps --cov-report=term-missing
-
-# Inside Docker
-docker-compose exec web pytest -v
-make test-cov
-```
-
----
-
-## 7. Production Deployment
-
-### Step 1 — Server setup (Ubuntu 22.04)
-
-```bash
-ssh ubuntu@YOUR_SERVER_IP
-
-# Install Docker
-sudo apt update
-sudo apt install docker.io docker-compose -y
-sudo systemctl enable docker
-sudo usermod -aG docker ubuntu
-
-# Log out and back in for group change to take effect
-exit
-ssh ubuntu@YOUR_SERVER_IP
-```
-
-### Step 2 — Copy project to server
-
-```bash
-# Option A — clone from GitHub (recommended)
-git clone https://github.com/yourusername/your-repo.git /opt/app
-cd /opt/app
-
-# Option B — rsync from local machine
-rsync -avz ./ ubuntu@YOUR_SERVER_IP:/opt/app/
-```
-
-### Step 3 — Configure production .env
-
-```bash
-cd /opt/app
-cp .env.example .env
-nano .env
-
-# Critical values:
-# DJANGO_SETTINGS_MODULE=config.settings.production
-# DEBUG=False
-# SECRET_KEY=very-long-random-string
-# ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
-# SENTRY_DSN=https://...
-```
-
-### Step 4 — Deploy
-
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-
-# Create superuser
-docker-compose exec web python manage.py createsuperuser
-```
-
-### Step 5 — Nginx reverse proxy
-
-```bash
-sudo apt install nginx -y
-sudo nano /etc/nginx/sites-available/app
-```
-
-Paste this config:
-
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com www.yourdomain.com;
-
-    location / {
-        proxy_pass         http://127.0.0.1:8000;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-    }
-
-    location /static/ { alias /opt/app/staticfiles/; }
-    location /media/  { alias /opt/app/media/; }
-    client_max_body_size 20M;
-}
-```
-
-```bash
-sudo ln -s /etc/nginx/sites-available/app /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
-### Step 6 — HTTPS with Let's Encrypt
-
-```bash
-sudo apt install certbot python3-certbot-nginx -y
-sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
-```
-
----
-
-## 8. Common Errors & Fixes
-
-| Error | Fix |
-|-------|-----|
-| `No module named 'debug_toolbar'` | `pip install -r requirements/local.txt` |
-| `No module named 'django_extensions'` | `pip install -r requirements/local.txt` |
-| `No module named 'whitenoise'` | `pip install -r requirements/base.txt` |
-| `No module named 'flower'` | `pip install flower` then run via `celery -A config flower` |
-| `No such command 'flower'` | Run as `celery -A config flower --port=5555` not `flower` alone |
-| `nc: not found` | Already fixed — uses `scripts/wait_for_db.py` (pure Python) |
-| `relation does not exist` | `python manage.py migrate` or `docker-compose exec web python manage.py migrate` |
-| `role "postgres" does not exist` | `createuser -s postgres` (Mac/Homebrew) |
-| `ALLOWED_HOSTS DisallowedHost` | Add domain/IP to `ALLOWED_HOSTS` in `.env` |
-| `CORS blocked` | Add frontend URL to `CORS_ALLOWED_ORIGINS` in `.env` |
-| `Port 8000 already in use` | Change to `8001:8000` in `docker-compose.yml` |
-| `No migrations to apply` | Not an error — database is already up to date |
-| `staticfiles W004 warning` | Not an error — create a `/static` folder or ignore it |
-| `SECRET_KEY not set` | Generate one — see [The .env File](#2-the-env-file) section |
-| `Gunicorn listening on 127.0.0.1` | Use `runserver` for local Docker, gunicorn only in production |
-
----
-
-## 9. Extending the Starter Kit
-
-### Add a new app
-
-```bash
-# Create the app
-python manage.py startapp myapp apps/myapp
-
-# Register in config/settings/base.py
-LOCAL_APPS = [
-    'apps.core',
-    'apps.authentication',
-    'apps.myapp',          # add here
-]
-
-# Create and run migrations
-python manage.py makemigrations
-python manage.py migrate
-```
-
-### Use the base model
-
-All models should inherit from `TimeStampedModel` for automatic UUID, `created_at`, `updated_at`:
-
-```python
-from apps.core.models import TimeStampedModel
-
-class Invoice(TimeStampedModel):
-    # id, created_at, updated_at inherited automatically
-    vendor = models.CharField(max_length=255)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    date   = models.DateField()
-```
-
-For soft-delete support:
-
-```python
-from apps.core.models import SoftDeleteModel
-
-class Document(SoftDeleteModel):
-    title = models.CharField(max_length=255)
-    # adds is_deleted, deleted_at, .soft_delete(), .restore()
-```
-
-### Use the logger
-
-```python
-import logging
-logger = logging.getLogger(__name__)
-
-logger.info('Invoice processed: %s', invoice.id)
-logger.warning('Low confidence score: %s', score)
-logger.error('Failed to push to accounting system', exc_info=True)
-```
-
-### Add a Celery task
-
-```python
-# apps/myapp/tasks.py
-from config.celery import app
-
-@app.task(bind=True, max_retries=3)
-def process_invoice(self, invoice_id):
-    try:
-        # your logic here
-        pass
-    except Exception as exc:
-        raise self.retry(exc=exc, countdown=60)
-
-# Call it anywhere:
-process_invoice.delay(invoice_id)
-
-# Schedule it in Django admin → Periodic Tasks (Celery Beat)
-```
-
----
-
-## Environment Comparison
-
-| Setting | Local | Docker | Production |
-|---------|-------|--------|------------|
-| `SETTINGS_MODULE` | `config.settings.local` | `config.settings.local` | `config.settings.production` |
-| `DEBUG` | `True` | `True` | `False` |
-| DB hostname | `localhost` | `db` | `db` |
-| Redis hostname | `localhost` | `redis` | `redis` |
-| Email backend | Console (prints to terminal) | Console | Real SMTP |
-| CORS | Allow all origins | Allow all origins | Listed origins only |
-| Sentry | Off | Off | On (when DSN set) |
-| Password hasher | Default | Default | Argon2 (most secure) |
-| Static files | WhiteNoise | WhiteNoise | WhiteNoise or S3 |
-| Debug toolbar | Yes (if installed) | Yes (if installed) | No |
-
----
-
-## Built by arhatinfo.com
-
-Backend, AI automation & cloud engineering — production-ready systems built to scale from day one.
-
-- Website: [arhatinfo.com](https://arhatinfo.com)
-- Email: [hello@arhatinfo.com](mailto:contact@arhatinfo.com)
-- Upwork: Available for projects
+## What I Learned
+
+- Feature-flag permissions scale better than tier ladders the moment pricing stops being strictly linear — I hit this rebuilding the permission classes when "removes ads" and "AI tools access" stopped being the same axis.
+- Decoupling migrations from deploy (a separate Cloud Run Job instead of running them inline) turned a "bad migration takes the whole service down" failure mode into a "the job fails, the running revision is untouched" one.
+- Centralizing every AI call behind one decorator instead of repeating auth/quota/logging per view meant adding tier gating to a Chrome extension surface later was a one-line permission check, not a rewrite.
+- Structured JSON output mode from the model isn't optional if a downstream system is going to parse the response — validating and falling back beats trusting raw text every time.
