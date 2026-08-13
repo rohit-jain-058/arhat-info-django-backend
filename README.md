@@ -2,7 +2,7 @@
 
 > AI career toolkit — resume parsing, AI-assisted job search tools, and a Chrome extension, built end-to-end by me.
 
-[Live Demo](https://your-live-url-here) · [Website](https://your-website-here) · [Architecture](#architecture)
+[Live Demo](https://dev.arhat.info/api/docs) · [Website](https://dev-hosting.arhat.info/) · [Architecture](#architecture)
 
 ---
 
