@@ -1,6 +1,6 @@
 # Tylented — Backend
 
-> AI career toolkit — resume parsing, AI-assisted job search tools, and a Chrome extension, built end-to-end by me.
+> Tylented — AI-powered career automation platform
 
 [Live Demo](https://dev.arhat.info/api/docs) · [Website](https://dev-hosting.arhat.info/) · [Architecture](#architecture)
 
