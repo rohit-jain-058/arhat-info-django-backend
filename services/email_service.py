@@ -19,7 +19,7 @@ def send_proposal_email(
     cost         = project_data.get("cost", {})
     timeline     = project_data.get("timeline", "?")
 
-    subject = f"Your Project Proposal — {project_type} | Arhatinfo"
+    subject = f"Your Project Proposal — {project_type} | Tylented"
 
     body = f"""Hi,
 
@@ -43,7 +43,7 @@ Looking forward to working with you.
 
 Best regards,
 Rohit Jain
-Arhatinfo Engineering
+Tylented Engineering
 hello@arhatinfo.com
 arhatinfo.com
 """
@@ -57,7 +57,7 @@ arhatinfo.com
             cc         = [settings.TEAM_EMAIL],
         )
         email.attach(
-            filename     = "arhatinfo-proposal.pdf",
+            filename     = "tylented-proposal.pdf",
             content      = pdf_bytes,
             mimetype     = "application/pdf",
         )

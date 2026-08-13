@@ -15,11 +15,11 @@ def send_verification_email(user, token: str):
     """Send email verification link to new user."""
     verify_url = f'{FRONTEND_URL}/verify-email?token={token}'
 
-    subject = 'Verify your arhat.info email address'
+    subject = 'Verify your Tylented email address'
 
     text_body = f"""Hi{' ' + user.name if getattr(user, 'name', '') else ''},
 
-Thanks for signing up for arhat.info!
+Thanks for signing up for Tylented!
 
 Please verify your email address by clicking the link below:
 {verify_url}
@@ -28,7 +28,7 @@ This link expires in 24 hours.
 
 If you didn't create an account, you can safely ignore this email.
 
-— The arhat.info team
+— The Tylented team
 """
 
     html_body = f"""
@@ -55,7 +55,7 @@ If you didn't create an account, you can safely ignore this email.
 <body>
   <div class="card">
     <div class="header">
-      <div class="logo">Arhat<span>.info</span></div>
+      <div class="logo">Tylented</div>
     </div>
     <div class="body">
       <h2>Verify your email address</h2>
@@ -66,7 +66,7 @@ If you didn't create an account, you can safely ignore this email.
       <p class="link">Or copy this link: {verify_url}</p>
       <p style="font-size:12px;color:#aaa;">If you didn't create an account, you can safely ignore this email.</p>
     </div>
-    <div class="footer">arhat.info &mdash; Free everyday tools</div>
+    <div class="footer">Tylented &mdash; Free everyday tools</div>
   </div>
 </body>
 </html>
@@ -91,7 +91,7 @@ def send_password_reset_email(user, token: str):
     """Send password reset link."""
     reset_url = f'{FRONTEND_URL}/reset-password?token={token}'
 
-    subject = 'Reset your arhat.info password'
+    subject = 'Reset your Tylented password'
 
     text_body = f"""Hi{' ' + user.name if getattr(user, 'name', '') else ''},
 
@@ -102,7 +102,7 @@ Reset your password here:
 
 This link expires in 1 hour. If you didn't request a password reset, ignore this email — your password won't change.
 
-— The arhat.info team
+— The Tylented team
 """
 
     html_body = f"""
@@ -131,18 +131,18 @@ This link expires in 1 hour. If you didn't request a password reset, ignore this
 <body>
   <div class="card">
     <div class="header">
-      <div class="logo">Arhat<span>.info</span></div>
+      <div class="logo">Tylented</div>
     </div>
     <div class="body">
       <h2>Reset your password</h2>
       <p>Hi{' ' + user.name if getattr(user, 'name', '') else ''},</p>
-      <p>We received a request to reset the password for your arhat.info account.</p>
+      <p>We received a request to reset the password for your Tylented account.</p>
       <a href="{reset_url}" class="btn">Reset Password</a>
       <div class="warning">⏱ This link expires in <strong>1 hour</strong>.</div>
       <p style="font-size:12px;color:#aaa;">If you didn't request a password reset, you can safely ignore this email. Your password won't change.</p>
       <p class="link">Or copy this link: {reset_url}</p>
     </div>
-    <div class="footer">arhat.info &mdash; Free everyday tools</div>
+    <div class="footer">Tylented &mdash; Free everyday tools</div>
   </div>
 </body>
 </html>

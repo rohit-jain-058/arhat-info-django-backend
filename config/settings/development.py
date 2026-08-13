@@ -1,7 +1,7 @@
 from .base import *
 import os
 
-DEBUG = False
+DEBUG = True
 
 # Lambda sets AWS_LAMBDA_FUNCTION_NAME in the environment
 IS_LAMBDA = bool(os.environ.get('AWS_LAMBDA_FUNCTION_NAME'))

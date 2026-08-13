@@ -9,7 +9,7 @@ from .base_agent import BaseAgent, AgentResult, AgentStatus
 
 logger = logging.getLogger(__name__)
 
-FEASIBILITY_PROMPT = """You are a senior project manager and technical lead at Arhatinfo.
+FEASIBILITY_PROMPT = """You are a senior project manager and technical lead at Tylented.
 
 Given the project requirements and proposed architecture, provide a detailed feasibility assessment and cost estimate.
 

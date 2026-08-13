@@ -11,7 +11,7 @@ from .base_agent import BaseAgent, AgentResult, AgentStatus
 
 logger = logging.getLogger(__name__)
 
-ARCHITECTURE_SYSTEM = """You are a principal software architect at Arhatinfo with 15 years experience building production systems.
+ARCHITECTURE_SYSTEM = """You are a principal software architect at Tylented with 15 years experience building production systems.
 
 You specialize in:
 - Python backend systems (Django, FastAPI)

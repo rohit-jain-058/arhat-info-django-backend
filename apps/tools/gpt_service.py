@@ -18,7 +18,18 @@ def get_client() -> OpenAI:
         _client = OpenAI(api_key=settings.OPENAI_API_KEY)
     return _client
 
+# views.py — choose model by tool
+MODEL_MAP = {
+    'job_matcher':     'gpt-4o',        # needs reasoning
+    'cover_letter':    'gpt-4o',        # needs quality writing
+    'resume_summary':  'gpt-4o-mini',   # simple summarization
+    'recruiter_reply': 'gpt-4o-mini',   # simple reply
+    'linkedin_post':   'gpt-4o-mini',   # simple writing
+    'email_gen':       'gpt-4o-mini',   # simple writing
+}
 
+def get_model(tool_id):
+    return MODEL_MAP.get(tool_id, 'gpt-4o-mini')
 def gpt_generate(system: str, user: str, model: str = 'gpt-4o', max_tokens: int = 1000) -> dict:
     """
     Call GPT and return result with token usage.
@@ -57,19 +68,19 @@ def gpt_generate(system: str, user: str, model: str = 'gpt-4o', max_tokens: int 
 def generate_prompt(goal: str, context: str = '', fmt: str = 'detailed') -> dict:
     system = "You are an expert at writing highly effective AI prompts. Write only the prompt itself — no explanation, no preamble."
     user   = f"Create a {fmt} AI prompt for:\nGoal: {goal}\nContext: {context or 'none'}\n\nWrite only the prompt."
-    return gpt_generate(system, user, max_tokens=600)
+    return gpt_generate(system, user, model=get_model('prompt'), max_tokens=600)
 
 
 def generate_email(purpose: str, recipient: str, context: str, tone: str) -> dict:
     system = "You are an expert business writer. Write concise, effective emails."
     user   = f"Write a {tone} {purpose} email.\nTo: {recipient or 'client'}\nContext: {context}\n\nInclude a subject line on the first line prefixed with 'Subject: '"
-    return gpt_generate(system, user, max_tokens=600)
+    return gpt_generate(system, user, model=get_model('email'), max_tokens=600)
 
 
 def generate_linkedin_post(topic: str, hook: str, style: str) -> dict:
     system = "You are a LinkedIn content expert. Write authentic, engaging posts that get traction."
     user   = f"Write a {style} LinkedIn post about: {topic}\nAngle: {hook or 'insightful and engaging'}\n\n150-300 words. Include 3-5 relevant hashtags at the end."
-    return gpt_generate(system, user, max_tokens=500)
+    return gpt_generate(system, user, model=get_model('linkedin_post'), max_tokens=500)
 
 
 def generate_cover_letter(role: str, company: str, skills: str, achievement: str) -> dict:
@@ -81,7 +92,7 @@ Key skills: {skills}
 Top achievement: {achievement}
 
 3 paragraphs. Specific, not generic. Address as 'Dear Hiring Manager'."""
-    return gpt_generate(system, user, max_tokens=600)
+    return gpt_generate(system, user, model=get_model('cover_letter'), max_tokens=600)
 
 
 def generate_resume_summary(role: str, years: str, skills: str, goal: str) -> dict:
@@ -93,7 +104,7 @@ Skills: {skills}
 Goal: {goal or 'advance in the field'}
 
 3-4 sentences. Specific and quantified where possible. No filler words."""
-    return gpt_generate(system, user, max_tokens=300)
+    return gpt_generate(system, user, model=get_model('resume_summary'), max_tokens=300)
 
 
 def generate_sql(question: str, schema: str = '', dialect: str = 'PostgreSQL') -> dict:
@@ -104,7 +115,7 @@ def generate_sql(question: str, schema: str = '', dialect: str = 'PostgreSQL') -
 {f'Schema:{chr(10)}{schema}' if schema else ''}
 
 Write only the SQL with brief comments for complex parts."""
-    return gpt_generate(system, user, max_tokens=800)
+    return gpt_generate(system, user, model=get_model('sql'), max_tokens=800)
 
 
 def generate_regex(description: str, example: str = '', language: str = 'JavaScript') -> dict:
@@ -118,7 +129,7 @@ Provide:
 1. The regex pattern
 2. Brief explanation of each part
 3. Code example in {language}"""
-    return gpt_generate(system, user, max_tokens=600)
+    return gpt_generate(system, user, model=get_model('regex'), max_tokens=600)
 
 
 def generate_api_docs(endpoint: str, fmt: str = 'Markdown') -> dict:
@@ -128,7 +139,7 @@ def generate_api_docs(endpoint: str, fmt: str = 'Markdown') -> dict:
 {endpoint}
 
 Include: description, HTTP method, URL, parameters, request body, response format, example request, example response, error codes."""
-    return gpt_generate(system, user, max_tokens=1000)
+    return gpt_generate(system, user, model=get_model('api_docs'), max_tokens=1000)
 
 
 def generate_meeting_notes(notes: str, style: str = 'action-items') -> dict:
@@ -143,7 +154,7 @@ def generate_meeting_notes(notes: str, style: str = 'action-items') -> dict:
 {notes}
 
 Format: {style_instructions.get(style, style_instructions['action-items'])}"""
-    return gpt_generate(system, user, max_tokens=800)
+    return gpt_generate(system, user,model=get_model('meeting_notes'), max_tokens=800)
 
 
 # ── NEW TOOLS (added in second batch) ─────────────────────────────────
@@ -178,8 +189,8 @@ Write a proposal (150-250 words) that:
 4. Mentions 1-2 relevant past results/examples
 5. Ends with a specific question about their project
 {f'6. Naturally mentions my rate of {rate}' if rate else ''}"""
-
-    return gpt_generate(system, user, max_tokens=600)
+    get_model('upwork_proposal')
+    return gpt_generate(system, user,model=get_model('upwork_proposal'), max_tokens=600)
 
 
 def generate_recruiter_reply(
@@ -209,7 +220,7 @@ Tone: {tone}
 Write a reply (50-150 words) that sounds human and genuine, not templated.
 Do not start with "Thank you for reaching out" or similar clichés."""
 
-    return gpt_generate(system, user, max_tokens=400)
+    return gpt_generate(system, user,model=get_model('recruiter_reply'), max_tokens=400)
 
 
 def match_job_description(
@@ -259,7 +270,7 @@ My Profile/Skills/Resume:
 
 {format_instructions.get(output_format, format_instructions['analysis'])}"""
 
-    return gpt_generate(system, user, max_tokens=800)
+    return gpt_generate(system, user, model=get_model('job_matcher'), max_tokens=800)
 
 
 def generate_cron(
@@ -290,7 +301,7 @@ Provide:
 4. Any edge cases or gotchas to be aware of (e.g. "doesn't account for DST")
 5. Alternative expressions if there are multiple valid approaches"""
 
-    return gpt_generate(system, user, max_tokens=600)
+    return gpt_generate(system, user, model=get_model('cron_generator'), max_tokens=600)
 
 
 def analyze_api_request(
@@ -336,7 +347,7 @@ When analyzing errors, always explain the root cause and provide a concrete fix.
 
     user = '\n'.join(parts) + '\n\n' + '\n\n'.join(analysis_request)
 
-    return gpt_generate(system, user, max_tokens=800)
+    return gpt_generate(system, user,model=get_model('upwork_proposal'), max_tokens=800)
 def generate_upwork_proposal(
     job_description: str,
     skills: str,
@@ -368,7 +379,7 @@ Write a proposal (150-250 words) that:
 5. Ends with a specific question about their project
 {f'6. Naturally mentions my rate of {rate}' if rate else ''}"""
 
-    return gpt_generate(system, user, max_tokens=600)
+    return gpt_generate(system, user, model=get_model('upwork_proposal'), max_tokens=600)
 
 
 # ── 2. LINKEDIN RECRUITER REPLY ────────────────────────────────────────
@@ -402,7 +413,7 @@ Tone: {tone}
 Write a reply (50-150 words) that sounds human and genuine, not templated.
 Do not start with "Thank you for reaching out" or similar clichés."""
 
-    return gpt_generate(system, user, max_tokens=400)
+    return gpt_generate(system, user, model=get_model('linkedin_reply'), max_tokens=400)
 
 
 # ── 3. JOB DESCRIPTION MATCHER ────────────────────────────────────────
@@ -456,7 +467,7 @@ My Profile/Skills/Resume:
 
 {format_instructions.get(output_format, format_instructions['analysis'])}"""
 
-    return gpt_generate(system, user, max_tokens=800)
+    return gpt_generate(system, user, model=get_model('job_match'), max_tokens=800)
 
 
 # ── 4. CRON GENERATOR ─────────────────────────────────────────────────
@@ -491,7 +502,7 @@ Provide:
 4. Any edge cases or gotchas to be aware of (e.g. "doesn't account for DST")
 5. Alternative expressions if there are multiple valid approaches"""
 
-    return gpt_generate(system, user, max_tokens=600)
+    return gpt_generate(system, user, model=get_model('cron'), max_tokens=600)
 
 
 # ── 5. API TESTER ─────────────────────────────────────────────────────
@@ -544,4 +555,4 @@ When analyzing errors, always explain the root cause and provide a concrete fix.
 
     user = '\n'.join(parts) + '\n\n' + '\n\n'.join(analysis_request)
 
-    return gpt_generate(system, user, max_tokens=800)
+    return gpt_generate(system, user, model=get_model('api_analysis'), max_tokens=800)

@@ -93,6 +93,17 @@ class IsFullBundle(IsAuthenticated):
         return bool(sub and sub.allows_api_key)
 
 
+class IsChromeExtensionSubscriber(IsAuthenticated):
+    """True only if the plan's allows_chrome_extension flag is set (AI+ and AI Premium)."""
+    message = 'A plan with Chrome extension access is required.'
+
+    def has_permission(self, request, view):
+        if not super().has_permission(request, view):
+            return False
+        sub = _get_subscription(request.user)
+        return bool(sub and sub.allows_chrome_extension)
+
+
 # ── API KEY AUTH — unchanged ────────────────────────────────────────────
 class HasValidAPIKey(BasePermission):
     """
@@ -121,8 +132,7 @@ class HasValidAPIKey(BasePermission):
 
 # ── HELPER ────────────────────────────────────────────────────────────
 def get_user_tier(request) -> str:
-    """Returns the raw tier code: 'free' | 'no_ads' | 'ai_tools' |
-    'form_tools' | 'form_ai' | 'no_ads_form_ai' | 'api_full'."""
+    """Returns the raw tier code: 'free' | 'ai_tools' | 'ai_tools_plus' | 'ai_premium'."""
     if not request.user or not request.user.is_authenticated:
         return 'free'
     return _get_tier(request.user)
@@ -130,8 +140,8 @@ def get_user_tier(request) -> str:
 
 def get_user_features(request) -> dict:
     """
-    Returns all 4 feature flags at once — convenient for a single
-    /api/subscriptions/me/ response instead of 4 separate checks.
+    Returns all feature flags at once — convenient for a single
+    /api/subscriptions/me/ response instead of separate checks.
     """
     sub = _get_subscription(request.user) if request.user.is_authenticated else None
     return {
@@ -140,4 +150,5 @@ def get_user_features(request) -> dict:
         'allows_ai_tools':   bool(sub and sub.allows_ai_tools),
         'allows_form_tools': bool(sub and sub.allows_form_tools),   # reserved
         'allows_api_key':    bool(sub and sub.allows_api_key),
+        'allows_chrome_extension': bool(sub and sub.allows_chrome_extension),
     }

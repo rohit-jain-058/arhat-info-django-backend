@@ -24,6 +24,24 @@ logger = logging.getLogger(__name__)
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
+class StaleSubscriptionError(Exception):
+    """
+    Raised when upgrade_subscription() is asked to modify a Stripe
+    subscription that Stripe already considers canceled/expired.
+
+    This happens when the local Subscription row falls out of sync with
+    Stripe — e.g. a webhook was missed, or the subscription was cancelled
+    directly in the Stripe dashboard. Stripe rejects Subscription.modify()
+    on a canceled subscription with: "A canceled subscription can only
+    update its cancellation_details and metadata." Callers should catch
+    this, heal the local record (mark it cancelled), and start a fresh
+    Checkout Session instead of trying to modify in place.
+    """
+    def __init__(self, stripe_status: str):
+        self.stripe_status = stripe_status
+        super().__init__(f'Stripe subscription is already "{stripe_status}" — cannot modify in place.')
+
+
 # ── NEW SUBSCRIPTION — first-time checkout ─────────────────────────────
 def create_checkout_session(user, plan, interval: str, success_url: str, cancel_url: str) -> str:
     """
@@ -85,7 +103,15 @@ def upgrade_subscription(stripe_subscription_id: str, new_plan) -> dict:
     # Get current subscription to find the subscription item ID
     # (Stripe requires the item ID to change the price on it)
     current_sub = stripe.Subscription.retrieve(stripe_subscription_id)
-    item_id     = current_sub['items']['data'][0]['id']
+
+    # Stripe rejects .modify() on a subscription it already considers
+    # canceled/expired — surface that as a specific error so the caller
+    # can heal the local record and fall back to a fresh checkout instead
+    # of a raw 500 from Stripe's own error message.
+    if current_sub['status'] in ('canceled', 'incomplete_expired'):
+        raise StaleSubscriptionError(current_sub['status'])
+
+    item_id = current_sub['items']['data'][0]['id']
 
     updated_sub = stripe.Subscription.modify(
         stripe_subscription_id,

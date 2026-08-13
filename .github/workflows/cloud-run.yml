@@ -26,9 +26,15 @@ jobs:
           if [ "${{ github.ref_name }}" = "main" ]; then
             echo "BUILD_ENV=production"                          >> $GITHUB_ENV
             echo "DJANGO_SETTINGS_MODULE=config.settings.production"  >> $GITHUB_ENV
+            # Prod-only: Direct VPC egress so Cloud Run can reach prod-db
+            # on its private IP. PROD_VPC_NETWORK / PROD_VPC_SUBNET are
+            # GitHub repo variables — set them to match what you created
+            # in the Console (e.g. network "default", subnet "prod-cloudrun-subnet").
+            echo "VPC_FLAGS=--network=${{ vars.PROD_VPC_NETWORK }} --subnet=${{ vars.PROD_VPC_SUBNET }} --vpc-egress=private-ranges-only" >> $GITHUB_ENV
           else
             echo "BUILD_ENV=development"                         >> $GITHUB_ENV
             echo "DJANGO_SETTINGS_MODULE=config.settings.development" >> $GITHUB_ENV
+            echo "VPC_FLAGS="                                     >> $GITHUB_ENV
           fi
 
       - name: Generate .env.yaml
@@ -85,7 +91,8 @@ jobs:
             --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend-${{ env.BUILD_ENV }} \
             --region ${{ vars.GCP_REGION }} \
             --allow-unauthenticated \
-            --env-vars-file .env.yaml 
+            --env-vars-file .env.yaml \
+            ${{ env.VPC_FLAGS }}
       - name: Run migrations
         run: |
           gcloud run jobs create migrate-${{ github.run_number }} \
@@ -96,11 +103,12 @@ jobs:
             --args "manage.py,migrate" \
             --execute-now \
             --wait \
-            --max-retries 0
+            --max-retries 0 \
+            ${{ env.VPC_FLAGS }}
 
-      - name: Clean up migration job
-        if: always()
-        run: |
-          gcloud run jobs delete migrate-${{ github.run_number }} \
-            --region ${{ vars.GCP_REGION }} \
-            --quiet
+      # - name: Clean up migration job
+      #   if: always()
+      #   run: |
+      #     gcloud run jobs delete migrate-${{ github.run_number }} \
+      #       --region ${{ vars.GCP_REGION }} \
+      #       --quiet

@@ -28,6 +28,7 @@ urlpatterns = [
     path('api/chatbot/', include('apps.chatbot.urls')),
     path('api/subscriptions/', include('apps.subscriptions.urls')),
     path('api/tools/', include('apps.tools.urls')),
+    path('api/resumes/', include('apps.resumes.urls')),
 
 ]
 

@@ -5,7 +5,7 @@ Add to MIDDLEWARE in base.py AFTER AuthenticationMiddleware:
   'apps.subscriptions.middleware.SubscriptionMiddleware',
 
 After adding this, any view can do:
-  request.tier            → 'free' | 'no_ads' | 'ai_tools' | 'full'
+  request.tier            → 'free' | 'ai_tools' | 'ai_tools_plus' | 'ai_premium'
   request.removes_ads     → True/False
   request.allows_ai_tools → True/False
   request.allows_api_key  → True/False

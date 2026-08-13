@@ -93,7 +93,7 @@ SLACK_ERROR_WEBHOOK_URL=https://hooks.slack.com/services/XXX/YYY/ZZZ
 # ── How to get a Slack webhook URL (free, 5 minutes) ───────────────────
 """
 1. Go to https://api.slack.com/apps -> Create New App -> From scratch
-2. Name it "Arhat Error Bot", pick your workspace
+2. Name it "Tylented Error Bot", pick your workspace
 3. Left sidebar -> Incoming Webhooks -> toggle ON
 4. Click "Add New Webhook to Workspace" -> choose a channel (e.g. #errors)
 5. Copy the webhook URL -> paste into .env as SLACK_ERROR_WEBHOOK_URL
