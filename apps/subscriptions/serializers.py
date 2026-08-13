@@ -16,7 +16,7 @@ class PlanSerializer(serializers.ModelSerializer):
             'id', 'name', 'tier', 'interval',
             'price_cents', 'price_display', 'currency',
             'removes_ads', 'allows_ai_tools', 'allows_api_key',
-            'ai_requests_per_day',
+            'allows_chrome_extension', 'ai_requests_per_day',
         ]
 
 
@@ -27,6 +27,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     removes_ads   = serializers.ReadOnlyField()
     allows_ai_tools = serializers.ReadOnlyField()
     allows_api_key  = serializers.ReadOnlyField()
+    allows_chrome_extension = serializers.ReadOnlyField()
     days_remaining  = serializers.SerializerMethodField()
 
     class Meta:
@@ -34,6 +35,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'plan', 'tier', 'status', 'is_active',
             'removes_ads', 'allows_ai_tools', 'allows_api_key',
+            'allows_chrome_extension',
             'started_at', 'current_period_start', 'current_period_end',
             'cancel_at_period_end', 'cancelled_at', 'trial_end',
             'days_remaining',

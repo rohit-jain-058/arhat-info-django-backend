@@ -11,7 +11,7 @@ import logging
 from datetime import datetime, timezone
 
 from django.conf import settings
-# from django.utils import timezone
+from django.utils import timezone as dj_timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
@@ -30,6 +30,7 @@ from .stripe_service import (
     cancel_subscription,
     resume_subscription,
     construct_webhook_event,
+    StaleSubscriptionError,
 )
 
 logger = logging.getLogger(__name__)
@@ -118,36 +119,51 @@ def checkout(request):
                 stripe_subscription_id = existing_sub.stripe_subscription_id,
                 new_plan               = plan,
             )
+        except StaleSubscriptionError as e:
+            # Local record was out of sync with Stripe (missed webhook, or
+            # cancelled directly in the Stripe dashboard). Heal it and fall
+            # through to PATH A below instead of erroring out.
+            logger.warning(
+                f'[Upgrade] {user.email}: local subscription pointed at a '
+                f'Stripe subscription that is already "{e.stripe_status}". '
+                f'Healing local record and starting a fresh checkout instead.'
+            )
+            existing_sub.status                 = 'cancelled'
+            existing_sub.cancelled_at           = dj_timezone.now()
+            existing_sub.stripe_subscription_id = ''
+            existing_sub.save(update_fields=['status', 'cancelled_at', 'stripe_subscription_id', 'updated_at'])
+            existing_sub = None
         except Exception as e:
             logger.error(f'[Upgrade] Failed for {user.email}: {e}', exc_info=True)
             return Response({'error': str(e)}, status=500)
 
-        # Update DB immediately — proration credit already applied at Stripe level
-        period_start, period_end = _sub_periods(stripe_sub)
-        existing_sub.plan                 = plan
-        existing_sub.status               = 'active'
-        existing_sub.cancel_at_period_end = False
-        existing_sub.current_period_start = period_start
-        existing_sub.current_period_end   = period_end
-        existing_sub.save()
+        if existing_sub:
+            # Update DB immediately — proration credit already applied at Stripe level
+            period_start, period_end = _sub_periods(stripe_sub)
+            existing_sub.plan                 = plan
+            existing_sub.status               = 'active'
+            existing_sub.cancel_at_period_end = False
+            existing_sub.current_period_start = period_start
+            existing_sub.current_period_end   = period_end
+            existing_sub.save()
 
-        # Log the upgrade as a payment event
-        Payment.objects.create(
-            user         = user,
-            subscription = existing_sub,
-            plan         = plan,
-            amount_cents = 0,   # actual prorated amount is handled by Stripe invoice
-            currency     = plan.currency,
-            status       = 'succeeded',
-            description  = f'Plan change → {plan.name} (prorated)',
-        )
+            # Log the upgrade as a payment event
+            Payment.objects.create(
+                user         = user,
+                subscription = existing_sub,
+                plan         = plan,
+                amount_cents = 0,   # actual prorated amount is handled by Stripe invoice
+                currency     = plan.currency,
+                status       = 'succeeded',
+                description  = f'Plan change → {plan.name} (prorated)',
+            )
 
-        logger.info(f'[Upgrade] {user.email}: {existing_sub.plan.name} → {plan.name} (prorated)')
-        return Response({
-            'upgraded':     True,
-            'subscription': SubscriptionSerializer(existing_sub).data,
-            'message':      f'Upgraded to {plan.name}. Unused days credited automatically.',
-        })
+            logger.info(f'[Upgrade] {user.email}: {existing_sub.plan.name} → {plan.name} (prorated)')
+            return Response({
+                'upgraded':     True,
+                'subscription': SubscriptionSerializer(existing_sub).data,
+                'message':      f'Upgraded to {plan.name}. Unused days credited automatically.',
+            })
 
     # ── PATH A: New subscriber — Stripe Checkout Session ───────────────
     try:
@@ -217,7 +233,7 @@ def cancel(request):
         message = 'Subscription will cancel at end of billing period.'
     else:
         sub.status       = 'cancelled'
-        sub.cancelled_at = timezone.now()
+        sub.cancelled_at = dj_timezone.now()
         sub.save()
         _downgrade_to_free(request.user, sub)
         message = 'Subscription cancelled immediately.'
@@ -316,7 +332,7 @@ def _handle_checkout_complete(session):
         stripe_sub = stripe_lib.Subscription.retrieve(stripe_sub_id)
         period_start, period_end = _sub_periods(stripe_sub)
     except Exception:
-        period_start = period_end = timezone.now()
+        period_start = period_end = dj_timezone.now()
 
     # Update or create — never create a second subscription row
     try:
@@ -376,7 +392,7 @@ def _handle_subscription_deleted(stripe_sub):
         return
 
     sub.status       = 'cancelled'
-    sub.cancelled_at = timezone.now()
+    sub.cancelled_at = dj_timezone.now()
     sub.save()
     _downgrade_to_free(sub.user, sub)
     logger.info(f'[Webhook] Subscription deleted, downgraded to free: {stripe_sub["id"]}')
@@ -450,7 +466,7 @@ def _handle_payment_succeeded(invoice):
             stripe_sub = stripe_lib.Subscription.retrieve(stripe_sub_id)
             period_start, period_end = _sub_periods(stripe_sub)
         except Exception:
-            period_start = period_end = timezone.now()
+            period_start = period_end = dj_timezone.now()
 
         try:
             sub = user.subscription

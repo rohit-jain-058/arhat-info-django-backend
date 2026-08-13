@@ -1,11 +1,11 @@
 """
 Subscription models.
 
-Tiers:
-  free       — all tools, ads shown
-  no_ads     — all tools, no ads
-  ai_tools   — all tools + AI tools, no ads
-  full       — everything + API key access
+Tiers (4-tier pricing — Free + 3 paid):
+  free           — free tools only, ads shown, no AI access
+  ai_tools       — AI Tool: no ads, AI tools, 20 AI requests/day
+  ai_tools_plus  — AI + Chrome Extension: no ads, AI tools, Chrome extension, 30 AI requests/day
+  ai_premium     — AI Premium: everything in AI+ (incl. Chrome extension), 50 AI requests/day
 
 Plugs into your existing authentication.User model.
 """
@@ -25,13 +25,10 @@ class Plan(models.Model):
     Create these once via admin or fixture.
     """
     TIER_CHOICES = [
-        ('free',            'Free'),
-        ('no_ads',          'No Ads'),
-        ('ai_tools',        'AI Tools'),
-        ('form_tools',      'Form Tools'),                      # reserved, future product
-        ('form_ai',         'Form Tools + AI Tools'),
-        ('no_ads_form_ai',  'No Ads + Form Tools + AI Tools'),
-        ('api_full',        'API Access (Full Bundle)'),
+        ('free',           'Free'),
+        ('ai_tools',       'AI Tool'),
+        ('ai_tools_plus',  'AI + Chrome Extension'),
+        ('ai_premium',     'AI Premium'),
     ]
     INTERVAL_CHOICES = [
         ('monthly', 'Monthly'),
@@ -163,6 +160,9 @@ class Subscription(models.Model):
     @property
     def allows_form_tools(self) -> bool:          # ← NEW — reserved, returns flag only
         return self.is_active and self.plan.allows_form_tools
+    @property
+    def allows_chrome_extension(self) -> bool:
+        return self.is_active and self.plan.allows_chrome_extension
     @property
     def tier(self) -> str:
         return self.plan.tier if self.is_active else 'free'

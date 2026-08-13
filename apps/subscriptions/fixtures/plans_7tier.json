@@ -1,53 +1,223 @@
 [
   {
     "model": "subscriptions.plan",
-    "pk": 1,
+    "pk": "00000000-0000-0000-0000-000000000001",
     "fields": {
-      "tier": "free",
       "name": "Free",
-      "monthly_price": "0.00",
-      "annual_price": "0.00",
-      "allows_ai_tools": false,
+      "tier": "free",
+      "interval": "monthly",
+      "price_cents": 0,
+      "currency": "CAD",
+      "is_active": true,
       "removes_ads": false,
-      "allows_api_access": false,
-      "allows_chrome_extension": false,
+      "allows_ai_tools": false,
+      "allows_form_tools": false,
+      "allows_api_key": false,
       "ai_requests_per_day": 0,
-      "created_at": "2026-01-01T00:00:00Z",
-      "updated_at": "2026-01-01T00:00:00Z"
+      "stripe_price_id": "",
+      "created_at": "2026-06-16T00:00:00Z",
+      "updated_at": "2026-06-16T00:00:00Z"
     }
   },
   {
     "model": "subscriptions.plan",
-    "pk": 2,
+    "pk": "00000000-0000-0000-0000-000000000020",
     "fields": {
+      "name": "AI Tools \u2014 Monthly",
       "tier": "ai_tools",
-      "name": "AI Tools",
-      "monthly_price": "9.99",
-      "annual_price": "7.99",
+      "interval": "monthly",
+      "price_cents": 999,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": false,
       "allows_ai_tools": true,
-      "removes_ads": true,
-      "allows_api_access": false,
-      "allows_chrome_extension": false,
+      "allows_form_tools": false,
+      "allows_api_key": false,
       "ai_requests_per_day": 50,
-      "created_at": "2026-01-01T00:00:00Z",
-      "updated_at": "2026-01-01T00:00:00Z"
+      "stripe_price_id": "",
+      "created_at": "2026-06-16T00:00:00Z",
+      "updated_at": "2026-06-16T00:00:00Z"
     }
   },
   {
     "model": "subscriptions.plan",
-    "pk": 3,
+    "pk": "00000000-0000-0000-0000-000000000021",
     "fields": {
-      "tier": "ai_tools_plus",
-      "name": "AI Tools Plus",
-      "monthly_price": "14.99",
-      "annual_price": "11.99",
+      "name": "AI Tools \u2014 Yearly",
+      "tier": "ai_tools",
+      "interval": "yearly",
+      "price_cents": 8990,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": false,
       "allows_ai_tools": true,
+      "allows_form_tools": false,
+      "allows_api_key": false,
+      "ai_requests_per_day": 50,
+      "stripe_price_id": "",
+      "created_at": "2026-06-16T00:00:00Z",
+      "updated_at": "2026-06-16T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000030",
+    "fields": {
+      "name": "Form Tools \u2014 Monthly",
+      "tier": "form_tools",
+      "interval": "monthly",
+      "price_cents": 999,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": false,
+      "allows_ai_tools": false,
+      "allows_form_tools": true,
+      "allows_api_key": false,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": "",
+      "created_at": "2026-06-16T00:00:00Z",
+      "updated_at": "2026-06-16T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000031",
+    "fields": {
+      "name": "Form Tools \u2014 Yearly",
+      "tier": "form_tools",
+      "interval": "yearly",
+      "price_cents": 8990,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": false,
+      "allows_ai_tools": false,
+      "allows_form_tools": true,
+      "allows_api_key": false,
+      "ai_requests_per_day": 0,
+      "stripe_price_id": "",
+      "created_at": "2026-06-16T00:00:00Z",
+      "updated_at": "2026-06-16T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000040",
+    "fields": {
+      "name": "Form Tools + AI Tools \u2014 Monthly",
+      "tier": "form_ai",
+      "interval": "monthly",
+      "price_cents": 1599,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": false,
+      "allows_ai_tools": true,
+      "allows_form_tools": true,
+      "allows_api_key": false,
+      "ai_requests_per_day": 50,
+      "stripe_price_id": "",
+      "created_at": "2026-06-16T00:00:00Z",
+      "updated_at": "2026-06-16T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000041",
+    "fields": {
+      "name": "Form Tools + AI Tools \u2014 Yearly",
+      "tier": "form_ai",
+      "interval": "yearly",
+      "price_cents": 14390,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": false,
+      "allows_ai_tools": true,
+      "allows_form_tools": true,
+      "allows_api_key": false,
+      "ai_requests_per_day": 50,
+      "stripe_price_id": "",
+      "created_at": "2026-06-16T00:00:00Z",
+      "updated_at": "2026-06-16T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000050",
+    "fields": {
+      "name": "No Ads + Form Tools + AI Tools \u2014 Monthly",
+      "tier": "no_ads_form_ai",
+      "interval": "monthly",
+      "price_cents": 1899,
+      "currency": "CAD",
+      "is_active": true,
       "removes_ads": true,
-      "allows_api_access": false,
-      "allows_chrome_extension": true,
+      "allows_ai_tools": true,
+      "allows_form_tools": true,
+      "allows_api_key": false,
       "ai_requests_per_day": 100,
-      "created_at": "2026-01-01T00:00:00Z",
-      "updated_at": "2026-01-01T00:00:00Z"
+      "stripe_price_id": "",
+      "created_at": "2026-06-16T00:00:00Z",
+      "updated_at": "2026-06-16T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000051",
+    "fields": {
+      "name": "No Ads + Form Tools + AI Tools \u2014 Yearly",
+      "tier": "no_ads_form_ai",
+      "interval": "yearly",
+      "price_cents": 17090,
+      "currency": "CAD",
+      "is_active": true,
+      "removes_ads": true,
+      "allows_ai_tools": true,
+      "allows_form_tools": true,
+      "allows_api_key": false,
+      "ai_requests_per_day": 100,
+      "stripe_price_id": "",
+      "created_at": "2026-06-16T00:00:00Z",
+      "updated_at": "2026-06-16T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000060",
+    "fields": {
+      "name": "API Access \u2014 Monthly",
+      "tier": "api_full",
+      "interval": "monthly",
+      "price_cents": 2999,
+      "currency": "CAD",
+      "is_active": false,
+      "removes_ads": true,
+      "allows_ai_tools": true,
+      "allows_form_tools": true,
+      "allows_api_key": true,
+      "ai_requests_per_day": 200,
+      "stripe_price_id": "",
+      "created_at": "2026-06-16T00:00:00Z",
+      "updated_at": "2026-06-16T00:00:00Z"
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": "00000000-0000-0000-0000-000000000061",
+    "fields": {
+      "name": "API Access \u2014 Yearly",
+      "tier": "api_full",
+      "interval": "yearly",
+      "price_cents": 26990,
+      "currency": "CAD",
+      "is_active": false,
+      "removes_ads": true,
+      "allows_ai_tools": true,
+      "allows_form_tools": true,
+      "allows_api_key": true,
+      "ai_requests_per_day": 200,
+      "stripe_price_id": "",
+      "created_at": "2026-06-16T00:00:00Z",
+      "updated_at": "2026-06-16T00:00:00Z"
     }
   }
 ]
+

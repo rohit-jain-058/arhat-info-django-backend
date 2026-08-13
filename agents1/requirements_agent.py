@@ -11,7 +11,7 @@ from .base_agent import BaseAgent, AgentResult, AgentStatus
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are a senior business analyst and requirement engineer for Arhatinfo — a backend, AI automation, and cloud engineering agency.
+SYSTEM_PROMPT = """You are a senior business analyst and requirement engineer for Tylented — a backend, AI automation, and cloud engineering agency.
 
 Your ONLY job right now: understand the client's project thoroughly enough to hand it to an architect.
 

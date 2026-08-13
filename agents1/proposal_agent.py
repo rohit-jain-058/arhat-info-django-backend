@@ -10,7 +10,7 @@ from .base_agent import BaseAgent, AgentResult, AgentStatus
 
 logger = logging.getLogger(__name__)
 
-PROPOSAL_SYSTEM = """You are a senior technical account manager at Arhatinfo writing a client proposal.
+PROPOSAL_SYSTEM = """You are a senior technical account manager at Tylented writing a client proposal.
 Write clearly, professionally, and warmly. No jargon without explanation.
 This proposal will be sent directly to the client."""
 
@@ -29,7 +29,7 @@ Format the proposal exactly like this:
 
 ---
 # Project Proposal — [Project Name]
-**Prepared by:** Arhatinfo Engineering  
+**Prepared by:** Tylented Engineering
 **Date:** [Today's date]
 
 ## Executive Summary
@@ -68,7 +68,7 @@ Format the proposal exactly like this:
 ## Recommended First Step
 [Prototype recommendation or direct build — explain why]
 
-## Why Arhatinfo
+## Why Tylented
 [2-3 sentences. Relevant experience, Python/Django expertise, AI engineering.]
 
 ## Next Steps

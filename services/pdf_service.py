@@ -68,7 +68,7 @@ def generate_proposal_pdf(proposal_text: str, project_data: dict) -> bytes:
     story = []
 
     # ── Header ────────────────────────────────────────────────────────
-    story.append(Paragraph("Arhatinfo Engineering", title_style))
+    story.append(Paragraph("Tylented Engineering", title_style))
     story.append(Paragraph("Project Proposal", heading_style))
     story.append(HRFlowable(width="100%", thickness=2, color=BLUE))
     story.append(Spacer(1, 0.4*cm))
