@@ -106,9 +106,9 @@ jobs:
             --max-retries 0 \
             ${{ env.VPC_FLAGS }}
 
-      # - name: Clean up migration job
-      #   if: always()
-      #   run: |
-      #     gcloud run jobs delete migrate-${{ github.run_number }} \
-      #       --region ${{ vars.GCP_REGION }} \
-      #       --quiet
+      - name: Clean up migration job
+        if: always()
+        run: |
+          gcloud run jobs delete migrate-${{ github.run_number }} \
+            --region ${{ vars.GCP_REGION }} \
+            --quiet
