@@ -16,7 +16,7 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }} 
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -106,9 +106,9 @@ jobs:
             --max-retries 0 \
             ${{ env.VPC_FLAGS }}
 
-      # - name: Clean up migration job
-      #   if: always()
-      #   run: |
-      #     gcloud run jobs delete migrate-${{ github.run_number }} \
-      #       --region ${{ vars.GCP_REGION }} \
-      #       --quiet
+      - name: Clean up migration job
+        if: always()
+        run: |
+          gcloud run jobs delete migrate-${{ github.run_number }} \
+            --region ${{ vars.GCP_REGION }} \
+            --quiet
