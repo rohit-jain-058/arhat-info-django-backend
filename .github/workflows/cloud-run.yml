@@ -107,18 +107,19 @@ jobs:
       #       ${{ env.VPC_FLAGS }}
       - name: Run migrations
         run: |
-          gcloud run jobs create update-plans-dryrun \
+          gcloud run jobs create update-plans-live \
             --image gcr.io/arhat-info-tools/django-backend-${{ env.BUILD_ENV }} \
             --region us-east1 \
             --env-vars-file .env.yaml \
             --command "python" \
-            --args "manage.py,update_plans,--dry-run" \
+            --args "manage.py,update_plans" \
             --execute-now \
             --wait \
             --max-retries 0 \
             --network=tylented-prod-vpc \
             --subnet=production-cloud-run \
             --vpc-egress=private-ranges-only
+
 
       # - name: Clean up migration job
       #   if: always()
