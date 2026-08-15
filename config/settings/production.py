@@ -12,6 +12,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     'api.arhatinfo.com',                        # your custom domain
     'prod.arhat.info',
+    'prod.tylented.com',
     config('ALLOWED_HOSTS', default=''),
 ]
 
@@ -35,7 +36,10 @@ CORS_ALLOWED_ORIGINS = [
     'https://www.arhat.info',
     'https://*.arhat.info',
     'https://arhatinfo.com',
-    'https://www.arhatinfo.com'
+    'https://www.arhatinfo.com',
+    'https://www.tylented.com',
+    'https://tylented.com'
+        
 
 ]
 CORS_ALLOW_CREDENTIALS = True
