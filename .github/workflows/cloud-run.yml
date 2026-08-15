@@ -78,52 +78,37 @@ jobs:
           DB_PASSWORD: "${{ secrets.DB_PASSWORD }}"
           EOF
 
-      # - name: Build and push image
-      #   run: |
-      #     gcloud builds submit \
-      #       --tag gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend-${{ env.BUILD_ENV }} \
-      #       --suppress-logs \
-      #       . || true
+      - name: Build and push image
+        run: |
+          gcloud builds submit \
+            --tag gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend-${{ env.BUILD_ENV }} \
+            --suppress-logs \
+            . || true
 
-      # - name: Deploy to Cloud Run
-      #   run: |
-      #     gcloud run deploy django-backend-${{ env.BUILD_ENV }} \
-      #       --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend-${{ env.BUILD_ENV }} \
-      #       --region ${{ vars.GCP_REGION }} \
-      #       --allow-unauthenticated \
-      #       --env-vars-file .env.yaml \
-      #       ${{ env.VPC_FLAGS }}
-      # - name: Run migrations
-      #   run: |
-      #     gcloud run jobs create migrate-${{ github.run_number }} \
-      #       --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend-${{ env.BUILD_ENV }} \
-      #       --region ${{ vars.GCP_REGION }} \
-      #       --env-vars-file .env.yaml \
-      #       --command "python" \
-      #       --args "manage.py,migrate" \
-      #       --execute-now \
-      #       --wait \
-      #       --max-retries 0 \
-      #       ${{ env.VPC_FLAGS }}
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy django-backend-${{ env.BUILD_ENV }} \
+            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend-${{ env.BUILD_ENV }} \
+            --region ${{ vars.GCP_REGION }} \
+            --allow-unauthenticated \
+            --env-vars-file .env.yaml \
+            ${{ env.VPC_FLAGS }}
       - name: Run migrations
         run: |
-          gcloud run jobs create setup-stripe-prices-live \
-            --image gcr.io/arhat-info-tools/django-backend-production \
-            --region us-east1 \
+          gcloud run jobs create migrate-${{ github.run_number }} \
+            --image gcr.io/${{ vars.GCP_PROJECT_ID }}/django-backend-${{ env.BUILD_ENV }} \
+            --region ${{ vars.GCP_REGION }} \
             --env-vars-file .env.yaml \
             --command "python" \
-            --args "manage.py,setup_stripe_prices,--live" \
+            --args "manage.py,migrate" \
             --execute-now \
             --wait \
             --max-retries 0 \
-            --network=tylented-prod-vpc \
-            --subnet=production-cloud-run \
-            --vpc-egress=private-ranges-only
+            ${{ env.VPC_FLAGS }}
 
-
-      # - name: Clean up migration job
-      #   if: always()
-      #   run: |
-      #     gcloud run jobs delete migrate-${{ github.run_number }} \
-      #       --region ${{ vars.GCP_REGION }} \
-      #       --quiet
+      - name: Clean up migration job
+        if: always()
+        run: |
+          gcloud run jobs delete migrate-${{ github.run_number }} \
+            --region ${{ vars.GCP_REGION }} \
+            --quiet
