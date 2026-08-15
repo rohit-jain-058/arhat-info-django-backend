@@ -107,12 +107,12 @@ jobs:
       #       ${{ env.VPC_FLAGS }}
       - name: Run migrations
         run: |
-          gcloud run jobs create update-plans-live \
-            --image gcr.io/arhat-info-tools/django-backend-${{ env.BUILD_ENV }} \
+          gcloud run jobs create setup-stripe-prices-live \
+            --image gcr.io/arhat-info-tools/django-backend-production \
             --region us-east1 \
             --env-vars-file .env.yaml \
             --command "python" \
-            --args "manage.py,update_plans" \
+            --args "manage.py,setup_stripe_prices,--live" \
             --execute-now \
             --wait \
             --max-retries 0 \
