@@ -94,19 +94,6 @@ jobs:
             --env-vars-file .env.yaml \
             ${{ env.VPC_FLAGS }}
 
-          gcloud run jobs create update-plans-dryrun \
-            --image gcr.io/arhat-info-tools/django-backend-production \
-            --region us-east1 \
-            --env-vars-file .env.yaml \
-            --command "python" \
-            --args "manage.py,update_plans,--dry-run" \
-            --execute-now \
-            --wait \
-            --max-retries 0 \
-            --network=tylented-prod-vpc \
-            --subnet=production-cloud-run \
-            --vpc-egress=private-ranges-only
-
       - name: Run migrations
         run: |
           gcloud run jobs create migrate-${{ github.run_number }} \
