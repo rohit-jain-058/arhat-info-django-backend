@@ -45,6 +45,7 @@ def _user_data(user) -> dict:
         'name':           getattr(user, 'name', '') or '',
         'email_verified': getattr(user, 'email_verified', False),
         'avatar_url':     getattr(user, 'avatar_url', '') or '',
+        'is_staff':       getattr(user, 'is_staff', False),
     }
 
 
@@ -64,8 +65,8 @@ def register(request):
     password = request.data.get('password', '')
     name     = request.data.get('name', '').strip()
 
-    if not email or not password:
-        return Response({'error': 'Email and password are required.'}, status=400)
+    if not email or not password or not name:
+        return Response({'error': 'Name, email, and password are required.'}, status=400)
 
     if len(password) < 8:
         return Response({'error': 'Password must be at least 8 characters.'}, status=400)

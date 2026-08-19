@@ -5,8 +5,16 @@ Copy this to apps/subscriptions/urls.py
 from django.urls import path
 from . import views
 from . import stripe_views
+from . import admin_views
 
 urlpatterns = [
+
+    # ── Internal admin dashboard (staff-only) ───────────────────────
+    path('admin/overview/',     admin_views.admin_overview,          name='admin_overview'),
+    path('admin/users/',        admin_views.admin_users,             name='admin_users'),
+    path('admin/alerts/',       admin_views.admin_alerts,            name='admin_alerts'),
+    path('admin/users/<uuid:user_id>/',              admin_views.admin_user_detail,       name='admin_user_detail'),
+    path('admin/users/<uuid:user_id>/subscription/', admin_views.admin_user_subscription, name='admin_user_subscription'),
 
     # ── Existing endpoints (unchanged) ─────────────────────────────
     path('plans/',              views.plan_list,       name='subscription_plans'),
